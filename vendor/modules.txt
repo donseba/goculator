@@ -1,0 +1,8 @@
+# github.com/donseba/expronaut v0.0.0-20240317122124-ebaa65ecada0
+## explicit; go 1.22.0
+github.com/donseba/expronaut
+github.com/donseba/expronaut/llm
+# github.com/donseba/go-htmx v1.8.0
+## explicit; go 1.22
+github.com/donseba/go-htmx
+github.com/donseba/go-htmx/sse

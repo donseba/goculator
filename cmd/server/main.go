@@ -1,0 +1,82 @@
+package main
+
+import (
+	"fmt"
+	"github.com/donseba/expronaut"
+	"github.com/donseba/go-htmx"
+	"github.com/donseba/go-htmx/sse"
+	"log"
+	"math/rand"
+	"net/http"
+	"time"
+)
+
+type App struct {
+	HTMX *htmx.HTMX
+}
+
+var (
+	sseManager sse.Manager
+)
+
+func main() {
+	app := App{
+		HTMX: htmx.New(),
+	}
+
+	sseManager = sse.NewManager(5)
+
+	go func() {
+		for {
+			time.Sleep(1 * time.Second) // Send a message every second
+			sseManager.Send(sse.NewMessage(fmt.Sprintf("%v", time.Now().Format(time.TimeOnly))).WithEvent("time"))
+		}
+	}()
+
+	mux := http.NewServeMux()
+	mux.Handle("GET /", http.HandlerFunc(app.Home))
+	mux.Handle("POST /calc", http.HandlerFunc(app.Calc))
+	mux.Handle("GET /sse", http.HandlerFunc(app.SSE))
+
+	err := http.ListenAndServe(":4321", mux)
+	log.Fatal(err)
+}
+
+func (a *App) Home(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "index.html")
+}
+
+func (a *App) Calc(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	in := r.PostFormValue("calc")
+	if in == "" {
+		http.Error(w, "missing input", http.StatusBadRequest)
+		return
+	}
+
+	// do some calculation
+	out, err := expronaut.Evaluate(ctx, in)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, _ = w.Write([]byte(fmt.Sprint(out)))
+}
+
+func (a *App) SSE(w http.ResponseWriter, r *http.Request) {
+	cl := sse.NewClient(randStringRunes(10))
+
+	sseManager.Handle(w, r, cl)
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}

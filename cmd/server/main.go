@@ -47,22 +47,32 @@ func (a *App) Home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) Calc(w http.ResponseWriter, r *http.Request) {
+
 	ctx := r.Context()
+
+	h := a.HTMX.NewHandler(w, r)
 
 	in := r.PostFormValue("calc")
 	if in == "" {
-		http.Error(w, "missing input", http.StatusBadRequest)
+		h.TriggerError(fmt.Sprintf("error: %v", "missing input"))
+		_, _ = h.Write([]byte{})
 		return
 	}
 
+	ti := time.Now()
 	// do some calculation
 	out, err := expronaut.Evaluate(ctx, in)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.TriggerError(fmt.Sprintf("error: %v", err))
+		_, _ = h.Write([]byte(fmt.Sprint(out)))
 		return
 	}
 
-	_, _ = w.Write([]byte(fmt.Sprint(out)))
+	calcTime := time.Since(ti).Microseconds()
+
+	h.TriggerInfo(fmt.Sprintf("calculation took %d us", calcTime))
+
+	_, _ = h.Write([]byte(fmt.Sprint(out)))
 }
 
 func (a *App) SSE(w http.ResponseWriter, r *http.Request) {

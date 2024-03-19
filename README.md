@@ -19,3 +19,9 @@
 ## screenshots
 ![Image Alt text](/goculator.png)
 
+## thanks
+calculator design inspired by [Tailwind Calculator Example](https://tailwindcomponents.com/component/simple-calculator)
+
+
+## license
+MIT License see [LICENSE](LICENSE) file
